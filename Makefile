@@ -26,7 +26,7 @@ migrate-create:
 	fi; \
 
 	docker compose run --rm app-postgres-migrate \
-		create
+		create \
 		-ext sql \
 		-dir /migrations \
 		-seq "$(seq)"
