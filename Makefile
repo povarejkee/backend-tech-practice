@@ -19,6 +19,12 @@ env-cleanup:
 		echo "Volume cleaning has been cancelled"; \
 	fi
 
+env-port-forward:
+	@docker compose up -d port-forwarder
+
+env-port-close:
+	@docker compose down -d port-forwarder
+
 migrate-create:
 	@if [ -z "$(seq)" ]; then \
 		echo "'seq' param is required! Sample: make migrate-create seq=test"; \
