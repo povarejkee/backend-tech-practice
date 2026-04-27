@@ -53,3 +53,6 @@ migrate-up:
 
 migrate-down:
 	@make migrate-action action=down
+
+app-start:
+	@go run cmd/app/main.go
