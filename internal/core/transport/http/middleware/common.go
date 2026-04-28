@@ -3,6 +3,7 @@ package core_http_middleware
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	core_logger "github.com/povarejkee/backend-tech-practice/internal/core/logger"
@@ -60,6 +61,30 @@ func Panic() Middleware {
 			}()
 
 			next.ServeHTTP(rw, r)
+		})
+	}
+}
+
+func Trace() Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			log := core_logger.FromContext(ctx)
+			rwm := core_http_response.NewResponseWriter(rw)
+
+			before := time.Now()
+			log.Debug(
+				">>> incoming HTTP request",
+				zap.Time("time", before.UTC()),
+			)
+
+			next.ServeHTTP(rwm, r)
+
+			log.Debug(
+				"<<< done HTTP request",
+				zap.Int("status_code", rwm.GetStatusCodeOrPanic()),
+				zap.Duration("latency", time.Now().Sub(before)),
+			)
 		})
 	}
 }

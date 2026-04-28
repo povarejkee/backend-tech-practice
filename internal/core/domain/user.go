@@ -7,5 +7,3 @@ type User struct {
 	FullName    string
 	PhoneNumber *string
 }
-
-// GET /users/{id}
