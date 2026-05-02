@@ -23,8 +23,12 @@ func (h *UsersHTTPHandler) CreateUser(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := core_logger.FromContext(ctx)
 
+	log.Debug("invoce CreateUser handler")
+
 	var req CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		// todo: handle error
 	}
+
+	rw.WriteHeader(http.StatusOK)
 }
