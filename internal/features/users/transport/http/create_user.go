@@ -1,11 +1,12 @@
 package users_transport_http
 
 import (
-	"encoding/json"
 	"net/http"
 
+	"github.com/povarejkee/backend-tech-practice/internal/core/domain"
 	core_logger "github.com/povarejkee/backend-tech-practice/internal/core/logger"
 	core_http_request "github.com/povarejkee/backend-tech-practice/internal/core/transport/http/request"
+	core_http_response "github.com/povarejkee/backend-tech-practice/internal/core/transport/http/response"
 )
 
 type CreateUserRequest struct {
@@ -23,17 +24,36 @@ type CreateUserResponse struct {
 func (h *UsersHTTPHandler) CreateUser(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := core_logger.FromContext(ctx)
-
-	log.Debug("invoce CreateUser handler")
+	responseHandler := core_http_response.NewHTTPResponseHandler(log, rw)
 
 	var req CreateUserRequest
 	if err := core_http_request.DecodeAndValidate(r, &req); err != nil {
-		// todo
+		responseHandler.ErrorResponse(err, "failed to decode and validate HTTP request")
+
+		return
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		// todo: handle error
+	userDomain, err := h.usersService.CreateUser(ctx, domainFromDTO(req))
+	if err != nil {
+		responseHandler.ErrorResponse(err, "failed to create user")
+
+		return
 	}
 
-	rw.WriteHeader(http.StatusOK)
+	response := dtoFromDomain(userDomain)
+
+	responseHandler.JSONResponse(response, http.StatusCreated)
+}
+
+func domainFromDTO(dto CreateUserRequest) domain.User {
+	return domain.NewUserUninitialized(dto.FullName, dto.PhoneNumber)
+}
+
+func dtoFromDomain(user domain.User) CreateUserResponse {
+	return CreateUserResponse{
+		ID:          user.ID,
+		Version:     user.Version,
+		FullName:    user.FullName,
+		PhoneNumber: user.PhoneNumber,
+	}
 }
