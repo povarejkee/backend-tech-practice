@@ -7,8 +7,11 @@ import (
 	"syscall"
 
 	core_logger "github.com/povarejkee/backend-tech-practice/internal/core/logger"
+	core_postgres_pool "github.com/povarejkee/backend-tech-practice/internal/core/repository/postgres/pool"
 	core_http_middleware "github.com/povarejkee/backend-tech-practice/internal/core/transport/http/middleware"
 	core_http_server "github.com/povarejkee/backend-tech-practice/internal/core/transport/http/server"
+	users_postgres_repository "github.com/povarejkee/backend-tech-practice/internal/features/users/repository/postgres"
+	users_service "github.com/povarejkee/backend-tech-practice/internal/features/users/service"
 	users_transport_http "github.com/povarejkee/backend-tech-practice/internal/features/users/transport/http"
 	"go.uber.org/zap"
 )
@@ -24,21 +27,20 @@ func main() {
 		fmt.Println("Failed to init app logger:", err)
 	}
 	defer logger.Close()
-	logger.Debug("Starting app!")
 
-	// создание первого слоя для работы с users
-	usersTransportHTTP := users_transport_http.NewUsersHTTPHandler(nil)
-	// получение ручек users
-	usersRoutes := usersTransportHTTP.Routes()
+	pool, err := core_postgres_pool.NewConnectionPool(ctx, core_postgres_pool.NewCfgMust())
+	if err != nil {
+		logger.Fatal("failed to init postgres connection pool", zap.Error(err))
+	}
+	defer pool.Close()
 
-	// создание мукса с версией апи
-	apiVersionRouter := core_http_server.NewAPIVersionRouter(core_http_server.ApiVersion1)
-	// регистрируем все ручки в муксе аля GET /users userMethod
-	apiVersionRouter.RegisterRoutes(usersRoutes...)
+	logger.Debug("initializing feature..", zap.String("feature", "users"))
 
-	// создаем инстанс сервака с еще одним муксом,
-	// который будет смотреть на входящие запросы
-	// например /api/v1/users
+	usersRepository := users_postgres_repository.NewUsersRepository(pool)
+	usersService := users_service.NewUsersService(usersRepository)
+	usersTransportHTTP := users_transport_http.NewUsersHTTPHandler(usersService)
+
+	logger.Debug("initializing http server..")
 	httpServer := core_http_server.NewHTTPServer(
 		core_http_server.NewConfigMust(),
 		logger,
@@ -46,9 +48,10 @@ func main() {
 		core_http_middleware.Logger(logger),
 		core_http_middleware.Panic(), core_http_middleware.Trace(),
 	)
-	// регаем версионный роутер в корневом муксе под префиксом /api/v1
-	// потом обрезаем /api/v1 и перенаправимся в мукс,
-	// который мы прокинули внутрь него вместе с apiVersionRouter
+
+	apiVersionRouter := core_http_server.NewAPIVersionRouter(core_http_server.ApiVersion1)
+	apiVersionRouter.RegisterRoutes(usersTransportHTTP.Routes()...)
+
 	httpServer.RegisterAPIRouters(apiVersionRouter)
 
 	if err := httpServer.Run(ctx); err != nil {
