@@ -9,7 +9,7 @@ import (
 	core_http_utils "github.com/povarejkee/backend-tech-practice/internal/core/transport/http/utils"
 )
 
-type GetUserResponse []UserDTOResponse
+type GetUsersResponse []UserDTOResponse
 
 func (h *UsersHTTPHandler) GetUsers(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -28,7 +28,7 @@ func (h *UsersHTTPHandler) GetUsers(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := GetUserResponse(usersDTOFromDomains(userDomains))
+	response := GetUsersResponse(usersDTOFromDomains(userDomains))
 
 	responseHandler.JSONResponse(response, http.StatusOK)
 }
