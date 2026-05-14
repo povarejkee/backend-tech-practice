@@ -42,7 +42,7 @@ func (u *User) Validate() error {
 			return fmt.Errorf("invalid `phoneNumber` len: %d: %w", phoneNumberLength, core_errors.ErrInvalidArgument)
 		}
 
-		re := regexp.MustCompile(`^\+[-9]+$`)
+		re := regexp.MustCompile(`^\+[0-9]+$`)
 
 		if !re.MatchString(*u.PhoneNumber) {
 			return fmt.Errorf("invalid `PhoneNumber` format: %w", core_errors.ErrInvalidArgument)
