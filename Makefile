@@ -12,7 +12,7 @@ env-down:
 env-cleanup:
 	@read -p "Do you want to clear all the volume files? Your data could be lost. [y/N]: " ans; \
 	if [ "$$ans" = "y" ]; then \
-		docker compose down app-postgres && \
+		docker compose down app-postgres port-forwarder && \
 		rm -rf out/pgdata && \
 		echo "Files has been cleared"; \
 	else  \
@@ -53,3 +53,9 @@ migrate-up:
 
 migrate-down:
 	@make migrate-action action=down
+
+app-start:
+	@export LOGGER_FOLDER=${PROJECT_ROOT}/out/logs && \
+	export POSTGRES_HOST=localhost && \
+	go mod tidy && \
+	go run cmd/app/main.go
